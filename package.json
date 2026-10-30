@@ -1,0 +1,36 @@
+{
+  "name": "freelance-hunter",
+  "version": "2.0.0",
+  "description": "Универсальный агрегатор заказов и вакансий: 11 источников, ИИ-подбор, скоринг качества, автоотклик, MCP и веб-UI",
+  "main": "src/engine.js",
+  "bin": {
+    "hunter": "bin/hunter.js"
+  },
+  "scripts": {
+    "start": "node web/server.js",
+    "login": "node browser/login.js",
+    "poll": "node bin/hunter.js poll",
+    "list": "node bin/hunter.js list",
+    "stats": "node bin/hunter.js stats",
+    "doctor": "node bin/hunter.js doctor",
+    "rescore": "node bin/hunter.js rescore",
+    "test": "node --test \"test/*.test.js\"",
+    "test:all": "node test/run-all.js",
+    "test:e2e": "node test/run-all.js"
+  },
+  "keywords": [
+    "freelance",
+    "alot.pro",
+    "mcp",
+    "aggregator",
+    "fl.ru",
+    "kwork"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "playwright": "^1.63.0"
+  }
+}

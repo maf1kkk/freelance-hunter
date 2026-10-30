@@ -1,0 +1,29 @@
+{
+  "channels": [
+    {
+      "name": "webdesign_jobs",
+      "label": "Веб-дизайн заказы",
+      "url": "https://t.me/webdesign_jobs"
+    },
+    {
+      "name": "designer_jobs",
+      "label": "Дизайн заказы",
+      "url": "https://t.me/designer_jobs"
+    },
+    {
+      "name": "javascript_jobs",
+      "label": "JS чат заказы",
+      "url": "https://t.me/javascript_jobs"
+    },
+    {
+      "name": "figma_jobs",
+      "label": "Figma заказы",
+      "url": "https://t.me/figma_jobs"
+    },
+    {
+      "name": "-1001063542127",
+      "label": "Воркзавр чат",
+      "url": "https://t.me/workzavr"
+    }
+  ]
+}
