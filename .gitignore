@@ -1,0 +1,15 @@
+node_modules/
+data/
+output/
+tmp/
+*.log
+.env
+*.env
+!.env.example
+browser/state/
+*.db
+*.db-wal
+*.db-shm
+*.db.broken-*
+.DS_Store
+Thumbs.db

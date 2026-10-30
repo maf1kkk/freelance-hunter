@@ -1,0 +1,20 @@
+'use strict';
+const path = require('path');
+const { chromium } = require('playwright');
+const OUT = path.join(__dirname, 'output');
+(async () => {
+  const browser = await chromium.launch();
+  const page = await browser.newPage({ viewport: { width: 1500, height: 950 } });
+  const errors = [];
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('pageerror', (e) => errors.push('PAGEERROR: ' + e.message));
+  await page.goto('http://127.0.0.1:3410', { waitUntil: 'networkidle', timeout: 30000 });
+  await page.waitForTimeout(2500);
+  await page.screenshot({ path: path.join(OUT, 'ui-feed.png') });
+  await page.click('[data-tab="kanban"]'); await page.waitForTimeout(1500);
+  await page.screenshot({ path: path.join(OUT, 'ui-kanban.png') });
+  await page.click('[data-tab="stats"]'); await page.waitForTimeout(1500);
+  await page.screenshot({ path: path.join(OUT, 'ui-stats.png') });
+  console.log('errors:', errors.length ? errors.slice(0, 5).join('\n') : 'нет');
+  await browser.close();
+})();

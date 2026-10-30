@@ -1,0 +1,21 @@
+'use strict';
+const path = require('path');
+const { chromium } = require('playwright');
+const OUT = path.join(__dirname, '..', 'output');
+(async () => {
+  const browser = await chromium.launch();
+  const page = await browser.newPage({ viewport: { width: 1500, height: 1100 } });
+  const errors = [];
+  page.on('pageerror', (e) => errors.push('PAGEERROR: ' + e.message));
+  await page.goto('http://127.0.0.1:3410', { waitUntil: 'networkidle', timeout: 30000 });
+  await page.click('[data-tab="ai"]');
+  await page.waitForTimeout(2000);
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: path.join(OUT, 'ui-ai2.png') });
+  const hasProfile = await page.locator('#aiProfileBox').isVisible();
+  const skills = await page.locator('#ap-skills').inputValue().catch(() => '');
+  console.log('профиль виден:', hasProfile, '| навыки:', skills.slice(0, 60));
+  console.log('errors:', errors.length ? errors.join('\n') : 'нет');
+  await browser.close();
+})();

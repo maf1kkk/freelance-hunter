@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['18', '20', '22', '24']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Установить зависимости
+        run: npm ci --omit=optional || npm install
+
+      - name: Юнит-тесты
+        run: npm test
+
+      - name: Проверка критериев
+        run: node test/verify.js
+
+      - name: Синтаксическая проверка
+        run: |
+          for f in $(find src bin web mcp test -name '*.js' -not -path '*/node_modules/*'); do
+            node --check "$f" || exit 1
+          done

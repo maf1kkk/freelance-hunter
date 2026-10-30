@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>freelance-hunter</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='7' fill='none' stroke='%236cb6ff' stroke-width='2'/></svg>">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <span class="logo">FH</span>
+  <h1>freelance-hunter</h1>
+  <span class="hstat" id="h-sources">источников: —</span>
+  <span class="hstat" id="h-jobs">заказов: —</span>
+  <span class="hstat" id="h-prime">prime: —</span>
+  <span class="spacer"></span>
+  <span class="hstat" id="h-account"><span class="dot"></span>аккаунты</span>
+  <button class="sm" id="autoRefresh" title="Автообновление раз в N минут">авто: выкл</button>
+  <button class="blue" id="pollBtn">⟳ Обновить ленту</button>
+</header>
+
+<div class="layout">
+  <aside>
+    <div class="side-box">
+      <h2>Поиск</h2>
+      <label class="fld">Поиск по тексту
+        <input id="f-q" placeholder="название, навык, клиент…">
+      </label>
+      <label class="fld">Цена от / до (₽)
+        <div class="row">
+          <input id="f-min" type="number" placeholder="от" style="flex:1">
+          <input id="f-max" type="number" placeholder="до" style="flex:1">
+        </div>
+      </label>
+      <label class="fld">Мин. качество (score)
+        <input id="f-score" type="number" min="0" max="100" placeholder="например 55">
+      </label>
+      <label class="fld" style="flex-direction:row;align-items:center;gap:6px">
+        <input type="checkbox" id="f-starred"> только избранное
+      </label>
+    </div>
+
+    <div class="side-box">
+      <h2>Вердикт качества</h2>
+      <div class="row" id="f-verdicts">
+        <button class="chip on prime" data-v="prime">prime</button>
+        <button class="chip on good" data-v="good">good</button>
+        <button class="chip on meh" data-v="meh">meh</button>
+        <button class="chip on bad" data-v="bad">bad</button>
+        <button class="chip" data-v="blocked">blocked</button>
+      </div>
+    </div>
+
+    <div class="side-box">
+      <h2>Источники</h2>
+      <div id="f-sources" class="side-box"></div>
+    </div>
+
+    <div class="side-box">
+      <h2>Статус</h2>
+      <label class="fld" style="flex-direction:row;align-items:center;gap:6px">
+        <input type="checkbox" id="f-new"> только новые
+      </label>
+      <div class="row">
+        <button class="sm" id="f-reset">Сбросить фильтры</button>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="tabs" id="tabs">
+      <button class="on" data-tab="feed">Лента</button>
+      <button data-tab="kanban">Канбан</button>
+      <button data-tab="ai">AI-подбор</button>
+      <button data-tab="accounts">Аккаунты</button>
+      <button data-tab="settings">Настройки</button>
+      <button data-tab="stats">Статистика</button>
+    </div>
+
+    <section id="tab-feed">
+      <div class="toolbar">
+        <span class="hstat" id="count">0</span>
+        <span class="spacer" style="flex:1"></span>
+        <button class="sm" id="rescoreBtn">Пересчитать качество</button>
+      </div>
+      <div id="list"><div class="empty">Нажми «Обновить ленту», чтобы собрать заказы</div></div>
+    </section>
+
+    <section id="tab-kanban" hidden>
+      <div class="kanban" id="kanban"></div>
+    </section>
+
+    <section id="tab-ai" hidden>
+      <div class="sgroup">
+        <h3>1. Провайдер ИИ</h3>
+        <div class="desc">Работает с любым OpenAI-совместимым эндпоинтом (OpenAI, DeepSeek, GLM/Z.AI, Groq, OpenRouter, Moonshot, Ollama, LM Studio, vLLM) и с Anthropic API. Провайдеры из конфига opencode подтягиваются автоматически — можно добавить свой ключ.</div>
+        <div class="row" style="margin-bottom:10px">
+          <select id="aiProvider" style="flex:2;min-width:260px"></select>
+          <input id="aiModel" placeholder="модель (например glm-4.5-flash)" style="flex:1;min-width:180px">
+          <button class="primary" id="aiSaveProvider">Сохранить</button>
+          <button id="aiTestProvider">Проверить связь</button>
+        </div>
+        <div class="hint" id="aiProviderInfo"></div>
+        <table class="tbl" id="aiProvidersTable" style="margin-top:12px"></table>
+
+        <div style="margin-top:16px;border-top:1px solid var(--border-soft);padding-top:12px">
+          <h3 style="font-size:13px;margin-bottom:8px">Добавить своего провайдера</h3>
+          <div class="grid2">
+            <label class="fld">Название<input id="aiCName" placeholder="Мой провайдер"></label>
+            <label class="fld">Тип API
+              <select id="aiCType">
+                <option value="openai">OpenAI-совместимый</option>
+                <option value="anthropic">Anthropic (Claude)</option>
+                <option value="ollama">Ollama (локально)</option>
+              </select>
+            </label>
+            <label class="fld" style="grid-column:1/-1">Base URL<input id="aiCBase" placeholder="https://api.example.com/v1"></label>
+            <label class="fld">API-ключ<input id="aiCKey" type="password" placeholder="sk-…"></label>
+            <label class="fld">Модель<input id="aiCModel" placeholder="gpt-4o-mini"></label>
+          </div>
+          <div class="row" style="margin-top:10px"><button id="aiAddCustom">Добавить провайдера</button></div>
+        </div>
+      </div>
+
+      <div class="sgroup">
+        <h3>2. Резюме</h3>
+        <div class="desc">Поддерживаются PDF, DOCX, TXT, HTML и вставка текстом. ИИ разберёт резюме в профиль: навыки, стек, ставку, пожелания и «что точно не хочу».</div>
+        <div class="row" style="margin-bottom:10px">
+          <input type="file" id="aiResumeFile" accept=".pdf,.docx,.txt,.md,.html" style="flex:1">
+          <button class="primary" id="aiUploadResume">Загрузить и разобрать</button>
+        </div>
+        <label class="fld">Или вставьте текст резюме
+          <textarea id="aiResumeText" rows="5" placeholder="Опыт, навыки, ставка, пожелания…" style="font-size:13px"></textarea>
+        </label>
+        <div class="row" style="margin-top:8px"><button id="aiAnalyzeText">Разобрать текст</button></div>
+      </div>
+
+      <div class="sgroup" id="aiProfileBox" hidden>
+        <h3>3. Профиль исполнителя <span class="badge" id="aiProfileModel"></span></h3>
+        <div class="desc">Проверь и поправь — на этом профиле строится подбор заказов.</div>
+        <div class="grid2">
+          <label class="fld">Имя<input id="ap-name"></label>
+          <label class="fld">Кем работает<input id="ap-title"></label>
+          <label class="fld" style="grid-column:1/-1">О себе<textarea id="ap-summary" rows="2"></textarea></label>
+          <label class="fld" style="grid-column:1/-1">Навыки (через запятую)<input id="ap-skills"></label>
+          <label class="fld" style="grid-column:1/-1">Стек (через запятую)<input id="ap-stack"></label>
+          <label class="fld" style="grid-column:1/-1">Опыт (через запятую)<input id="ap-exp"></label>
+          <label class="fld" style="grid-column:1/-1">Подходящие категории (через запятую)<input id="ap-cats"></label>
+          <label class="fld">Ставка ₽/час<input id="ap-rate" type="number"></label>
+          <label class="fld">Мин. бюджет ₽<input id="ap-budget" type="number"></label>
+          <label class="fld" style="grid-column:1/-1">Готов освоить (через запятую)<input id="ap-learn"></label>
+          <label class="fld" style="grid-column:1/-1">НЕ хочу (через запятую)<input id="ap-red"></label>
+          <label class="fld" style="grid-column:1/-1">Контакты<input id="ap-contacts"></label>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="primary" id="aiSaveProfile">Сохранить профиль</button>
+          <span class="hint" id="aiProfileSaved"></span>
+        </div>
+      </div>
+
+      <div class="sgroup">
+        <h3>4. Подбор заказов</h3>
+        <div class="desc">ИИ оценит заказы из текущей ленты по твоему профилю и объяснит, что брать.</div>
+        <div class="row" style="margin-bottom:10px">
+          <button class="primary" id="aiMatch">Оценить ленту</button>
+          <button id="aiRecommend">Что взять?</button>
+          <span class="hint" id="aiMatchInfo"></span>
+        </div>
+        <div class="row" style="margin-bottom:10px">
+          <input id="aiQuestion" placeholder="Спроси ИИ: «какой заказ лучше взять и почему?»" style="flex:1">
+          <button id="aiAsk">Спросить</button>
+        </div>
+        <div id="aiAnswer" class="proj-body" style="display:none"></div>
+        <table class="tbl" id="aiMatchTable"></table>
+      </div>
+    </section>
+
+    <section id="tab-accounts" hidden>
+      <div class="sgroup">
+        <h3>Мои аккаунты на всех площадках</h3>
+        <div class="desc">Проверка доступа ко всем подключённым сервисам. Куки можно импортировать ниже.</div>
+        <div class="row" style="margin-bottom:10px">
+          <button class="blue" id="accCheck">Проверить все</button>
+        </div>
+        <table class="tbl" id="accTable"></table>
+      </div>
+
+      <div class="sgroup">
+        <h3>Импорт cookie-файла</h3>
+        <div class="desc">Поддерживаются: Netscape cookies.txt, Chrome/EditThisCookie JSON, Playwright storageState, JSON {cookies:[…]}, сырая строка «name=value; …». Сервис определяется автоматически по домену.</div>
+        <div class="grid2">
+          <label class="fld">Путь к файлу
+            <input id="accPath" placeholder="D:\Downloads\cookies.txt">
+          </label>
+          <label class="fld">Сервис (необязательно)
+            <select id="accService">
+              <option value="">— определить автоматически —</option>
+              <option value="flru">FL.ru</option>
+              <option value="kwork">Kwork</option>
+              <option value="hh">hh.ru</option>
+              <option value="avito">Avito</option>
+            </select>
+          </label>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="primary" id="accImport">Импортировать файл</button>
+        </div>
+        <label class="fld" style="margin-top:12px">Или вставьте cookies прямо сюда
+          <textarea id="accRaw" rows="3" placeholder="name=value; other=value" style="font-family:var(--mono);font-size:12px"></textarea>
+        </label>
+        <div class="row" style="margin-top:8px">
+          <button id="accImportRaw">Импортировать строку</button>
+        </div>
+      </div>
+
+      <div class="sgroup">
+        <h3>Telegram-каналы</h3>
+        <div class="row" style="margin-bottom:10px">
+          <input id="tgName" placeholder="@channel или -100123" style="flex:1">
+          <input id="tgLabel" placeholder="Подпись" style="flex:1">
+          <button id="tgAdd">Добавить</button>
+        </div>
+        <table class="tbl" id="tgTable"></table>
+      </div>
+    </section>
+
+    <section id="tab-settings" hidden>
+      <div class="sgroup">
+        <h3>Профиль исполнителя</h3>
+        <div class="desc">Используется для подбора заказов и генерации откликов.</div>
+        <div class="grid2">
+          <label class="fld">Имя<input id="p-name"></label>
+          <label class="fld">Кем вы на бирже<input id="p-title"></label>
+          <label class="fld" style="grid-column:1/-1">Навыки (через запятую)<input id="p-skills"></label>
+          <label class="fld">Ставка ₽/час<input id="p-rate" type="number"></label>
+          <label class="fld">Опыт<input id="p-exp"></label>
+          <label class="fld" style="grid-column:1/-1">Контакты<input id="p-contacts"></label>
+        </div>
+        <div class="row" style="margin-top:10px"><button class="primary" id="pSave">Сохранить профиль</button></div>
+      </div>
+
+      <div class="sgroup">
+        <h3>Поиск</h3>
+        <div class="grid2">
+          <label class="fld" style="grid-column:1/-1">Плюс-слова (через запятую)<input id="s-plus"></label>
+          <label class="fld" style="grid-column:1/-1">Минус-слова (через запятую)<input id="s-minus"></label>
+          <label class="fld">Цена от<input id="s-pmin" type="number"></label>
+          <label class="fld">Цена до<input id="s-pmax" type="number"></label>
+          <label class="fld">Биржи (пусто = все)<input id="s-sites" placeholder="flru, kworkru"></label>
+          <label class="fld">Интервал опроса, мин<input id="s-poll" type="number"></label>
+        </div>
+      </div>
+
+      <div class="sgroup">
+        <h3>Фильтр качества</h3>
+        <div class="desc">Жёсткие пороги отсекают «плохих» заказчиков и невыгодные заказы.</div>
+        <div class="grid2">
+          <label class="fld">Мин. рейтинг заказчика (0 = не важно)<input id="q-rating" type="number" min="0"></label>
+          <label class="fld">Мин. отзывов заказчика<input id="q-reviews" type="number" min="0"></label>
+          <label class="fld">Макс. откликов на заказ<input id="q-resp" type="number" min="1"></label>
+          <label class="fld">Мин. ₽/час<input id="q-rate" type="number" min="0"></label>
+          <label class="fld" style="grid-column:1/-1">Стоп-слова (через запятую)<input id="q-block" placeholder="обмен валют, крипта, ставки"></label>
+        </div>
+      </div>
+
+      <div class="sgroup">
+        <h3>Автоотклик</h3>
+        <div class="desc">По умолчанию включён безопасный режим (dry run): тексты готовятся, но не отправляются.</div>
+        <div class="grid2">
+          <label class="fld" style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="a-enabled"> включён</label>
+          <label class="fld" style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="a-dry"> безопасный режим (dry run)</label>
+          <label class="fld">Лимит в день<input id="a-limit" type="number" min="1"></label>
+          <label class="fld">Мин. score<input id="a-score" type="number" min="0" max="100"></label>
+          <label class="fld">Сервисы (через запятую)<input id="a-services" placeholder="flru, kwork"></label>
+        </div>
+      </div>
+
+      <div class="sgroup">
+        <h3>Уведомления в Telegram</h3>
+        <div class="desc">Бот присылает новые заказы с высоким качеством. Токен бота от @BotFather.</div>
+        <div class="grid2">
+          <label class="fld" style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="n-enabled"> включить</label>
+          <label class="fld">Токен бота<input id="n-token" placeholder="123456:ABC-DEF..."></label>
+          <label class="fld">Chat ID<input id="n-chat" placeholder="123456789"></label>
+          <label class="fld">Мин. score<input id="n-score" type="number" min="0" max="100"></label>
+          <label class="fld" style="grid-column:1/-1">Вердикты (через запятую)<input id="n-verdicts" placeholder="prime, good"></label>
+        </div>
+        <div class="row" style="margin-top:10px"><button id="nCheck">Проверить бота</button></div>
+      </div>
+
+      <div class="row" style="position:sticky;bottom:12px">
+        <button class="primary" id="sSave">Сохранить настройки</button>
+        <button id="sRescore">Сохранить и пересчитать</button>
+      </div>
+    </section>
+
+    <section id="tab-stats" hidden>
+      <div class="stat-grid" id="statGrid"></div>
+      <div class="sgroup">
+        <h3>По источникам</h3>
+        <table class="tbl" id="statSrc"></table>
+      </div>
+      <div class="sgroup">
+        <h3>Состояние опроса</h3>
+        <table class="tbl" id="statState"></table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<dialog id="dlg">
+  <div class="dhead">
+    <strong id="d-title">Заказ</strong>
+    <button class="close" onclick="dlg.close()">✕</button>
+  </div>
+  <div class="dbody">
+    <div id="d-meta" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px"></div>
+    <dl class="kv" id="d-kv"></dl>
+    <div class="section-h">Оценка качества</div>
+    <div class="parts" id="d-parts"></div>
+    <ul class="reasons" id="d-reasons"></ul>
+    <div class="section-h">Текст заказа</div>
+    <div class="proj-body" id="d-body"></div>
+    <div id="d-dupes" hidden>
+      <div class="section-h">Дубликаты на других площадках</div>
+      <div id="d-dupes-list"></div>
+    </div>
+    <div class="section-h">Отклик</div>
+    <textarea class="resp" id="d-response"></textarea>
+    <div class="row" style="margin-top:8px">
+      <button class="sm" id="d-redraft">Перегенерировать черновик</button>
+      <button class="sm" id="d-ai-improve">Улучшить отклик (ИИ)</button>
+      <button class="sm" id="d-ai-eval">Оценить заказ (ИИ)</button>
+      <button class="sm" id="d-star">★ В избранное</button>
+    </div>
+    <div id="d-ai-box" hidden style="margin-top:10px">
+      <div class="section-h">Оценка ИИ</div>
+      <div id="d-ai-content" class="reasons"></div>
+    </div>
+  </div>
+  <div class="dfoot">
+    <a id="d-link" href="#" target="_blank" rel="noopener"><button type="button">Открыть на площадке ↗</button></a>
+    <button id="d-save">Сохранить отклик</button>
+    <button id="d-sent" class="primary">Отправлен</button>
+  </div>
+</dialog>
+
+<div id="toastHost"></div>
+<script src="/app.js"></script>
+</body>
+</html>
