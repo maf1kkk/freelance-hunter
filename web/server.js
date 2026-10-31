@@ -423,7 +423,16 @@ function readBodyBuf(req) {
   });
 }
 
-server.listen(PORT, () => {
-  console.log(`freelance-hunter web → http://localhost:${PORT}`);
-  console.log(`источников подключено: ${sources.all().length}`);
-});
+// Export for Vercel serverless
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = server;
+  module.exports.default = server;
+}
+
+// Standalone mode
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`freelance-hunter web → http://localhost:${PORT}`);
+    console.log(`источников подключено: ${sources.all().length}`);
+  });
+}
